@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Password } from '../services/password';
+import { PasswordManager } from '../services/password';
 
 interface UserProps {
     email: string;
@@ -15,23 +15,33 @@ interface UserModel extends mongoose.Model<UserDoc> {
     build(props: UserProps): UserDoc;
 }
 
-const userSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: [true, 'User must have an email'],
-        unique: true,
+const userSchema = new mongoose.Schema(
+    {
+        email: {
+            type: String,
+            required: [true, 'User must have an email'],
+            unique: true,
+        },
+        password: {
+            type: String,
+            required: [true, 'User must have a password'],
+        },
     },
-    password: {
-        type: String,
-        required: [true, 'User must have a password'],
+    {
+        toJSON: {
+            transform(doc, ret) {
+                ret.id = ret._id;
+                delete ret._id;
+                delete ret.password;
+                delete ret.__v;
+            },
+        },
     },
-});
+);
 
 userSchema.pre<UserDoc>('save', async function (next) {
     if (this.isModified('password')) {
-        console.log('password is modified');
-        const hashedPassword = await Password.toHash(this.password);
-        console.log(hashedPassword);
+        const hashedPassword = await PasswordManager.toHash(this.password);
         this.password = hashedPassword;
     }
     next();
