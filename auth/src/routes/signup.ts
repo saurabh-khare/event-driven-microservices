@@ -22,9 +22,9 @@ router.post(
         if (existingUser) {
             throw new BadRequestError('User already exists');
         }
+
         const newUser = await User.build({ email, password });
         await newUser.save();
-
         const userToken = jwt.sign(
             {
                 id: newUser.id,
